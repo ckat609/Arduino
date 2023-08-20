@@ -2,6 +2,12 @@
 
 uint8_t buf[8] = {0}; // Keyboard report buffer
 
+#define LED 12
+
+#define DRE_SW 53
+#define DRE_DT 51
+#define DRE_CLK 49
+
 #define LCDPIN_RS 3
 #define LCDPIN_EN 4
 #define LCDPIN_D4 5
@@ -22,35 +28,42 @@ LiquidCrystal lcd(LCDPIN_RS,
                   LCDPIN_D6,
                   LCDPIN_D7);
 
-const int MAXKEYS = 4;
-typedef struct
-{
-    char *title;
-    int keycodes[MAXKEYS];
-    char keys[MAXKEYS];
-    int pins[MAXKEYS];
-} program;
-
-program programs[3] = {{"SCULPT MODE", {4, 22, 7, 9}, {'A', 'S', 'D', 'F'}},
-                       {"TEXTURE PAINT", {30, 31, 32, 33}, {'1', '2', '3', '4'}},
-                       {"GREASE PENCIL", {20, 26, 8, 21}, {'Q', 'W', 'E', 'R'}}};
-
 char lcdTitle[] = "PROGRAM:";
-// char *programs[3] = {"SCULPT MODE", "TEXTURE PAINT", "GREASE PENCIL"};
-int totalPrograms = (sizeof(programs) / sizeof(programs[0]));
-int currentProgram = 0;
+
+int count = 0;
+int LEDValue = 0;
+bool isLEDon = true;
+
+int prevStateBUTTON_PRG;
+int currStateBUTTON_PRG;
+
+int currentStateSW;
+int previousStateSW;
+int currentStateCLK;
+int previousStateCLK;
+int currentStateDT;
 
 int prevStateBUTTON_11;
 int prevStateBUTTON_12;
 int prevStateBUTTON_13;
 int prevStateBUTTON_14;
-int prevStateBUTTON_PRG;
 
-int currStateBUTTON_11;
-int currStateBUTTON_12;
-int currStateBUTTON_13;
-int currStateBUTTON_14;
-int currStateBUTTON_PRG;
+const int MAXKEYS = 7;
+typedef struct
+{
+    char *title;
+    int keycodes[MAXKEYS];
+    char *keys[MAXKEYS];
+    int pins[MAXKEYS];
+    int prevStates[MAXKEYS];
+} program;
+
+program programs[3] = {{"SCULPT MODE", {87, 86, 43, 4, 22, 7, 9}, {"+", "-", "Tab", "A", "S", "D", "F"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
+                       {"TEXTURE PAINT", {87, 86, 43, 30, 31, 32, 33}, {"+", "-", "Tab", "1", "2", "3", "4"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
+                       {"GREASE PENCIL", {87, 86, 43, 20, 26, 8, 21}, {"+", "-", "Tab", "Q", "W", "E", "R"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}}};
+
+int totalPrograms = (sizeof(programs) / sizeof(programs[0]));
+int currentProgram = 0;
 
 void setup()
 {
@@ -58,31 +71,70 @@ void setup()
 
     lcd.begin(16, 2);
     // Set pinmode of Input pins
-    pinMode(BUTTON_11, INPUT_PULLUP);
-    pinMode(BUTTON_12, INPUT_PULLUP);
-    pinMode(BUTTON_13, INPUT_PULLUP);
-    pinMode(BUTTON_14, INPUT_PULLUP);
-    pinMode(BUTTON_PRG, INPUT_PULLUP);
+    for (int i = 0; i < MAXKEYS; i++)
+    {
+        programs[currentProgram].prevStates[i] = HIGH;
+        pinMode(programs[currentProgram].pins[i], INPUT_PULLUP);
+        digitalWrite(programs[currentProgram].pins[i], HIGH);
+    }
 
-    digitalWrite(BUTTON_11, HIGH);
-    digitalWrite(BUTTON_12, HIGH);
-    digitalWrite(BUTTON_13, HIGH);
-    digitalWrite(BUTTON_14, HIGH);
+    pinMode(BUTTON_PRG, INPUT_PULLUP);
     digitalWrite(BUTTON_PRG, HIGH);
+
+    pinMode(DRE_SW, INPUT_PULLUP);
+    pinMode(DRE_CLK, INPUT);
+    pinMode(DRE_DT, INPUT);
+    pinMode(LED, OUTPUT);
+
+    previousStateSW = digitalRead(DRE_SW);
+    previousStateCLK = digitalRead(DRE_CLK);
 }
 
 void loop()
 {
+
     lcd.setCursor(0, 0);
     lcd.print(lcdTitle);
     lcd.setCursor(0, 1);
     lcd.print(programs[currentProgram].title);
 
     changeProgram(currStateBUTTON_PRG, prevStateBUTTON_PRG, programs, currentProgram, totalPrograms, lcd);
-    pressKey(BUTTON_11, 0, currStateBUTTON_11, prevStateBUTTON_11, programs, currentProgram);
-    pressKey(BUTTON_12, 1, currStateBUTTON_12, prevStateBUTTON_12, programs, currentProgram);
-    pressKey(BUTTON_13, 2, currStateBUTTON_13, prevStateBUTTON_13, programs, currentProgram);
-    pressKey(BUTTON_14, 3, currStateBUTTON_14, prevStateBUTTON_14, programs, currentProgram);
+
+    for (int i = 2; i < MAXKEYS; i++)
+    {
+        pressKey(programs[currentProgram].pins[i], i, programs[currentProgram].prevStates[i], programs, currentProgram);
+    }
+
+    currentStateSW = digitalRead(DRE_SW);
+    currentStateCLK = digitalRead(DRE_CLK);
+    currentStateDT = digitalRead(DRE_DT);
+    if (currentStateCLK != previousStateCLK)
+    {
+        if (currentStateCLK != digitalRead(DRE_DT))
+        {
+            pressKey(DRE_DT, 0, previousStateCLK, programs, currentProgram);
+            if (count > 0)
+                count--;
+        }
+        else
+        {
+            pressKey(DRE_DT, 1, previousStateCLK, programs, currentProgram);
+            if (count < 51)
+                count++;
+        }
+    }
+
+    if (currentStateSW == LOW && previousStateSW == HIGH)
+    {
+        pressKey(currentStateSW, 2, previousStateSW, programs, currentProgram);
+        isLEDon = !isLEDon;
+    }
+    LEDValue = isLEDon ? count * 5 : 0;
+
+    previousStateSW = currentStateSW;
+    previousStateCLK = currentStateCLK;
+
+    analogWrite(LED, LEDValue);
 }
 // Function for Key Release
 void releaseKey()
@@ -92,15 +144,18 @@ void releaseKey()
     Serial.write(buf, 8); // Send Release key
 }
 
-void pressKey(int pin, int currKey, int &currStatePin, int &prevStatePin, program progs[], int currProg)
+void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int currProg)
 {
-    currStatePin = digitalRead(pin);
-    if (currStatePin == LOW && prevStatePin == HIGH)
+    int currStatePin = digitalRead(pin);
+    if (currStatePin == LOW)
     {
         buf[2] = progs[currentProgram].keycodes[currKey]; // keycode
         Serial.write(buf, 8);                             // Send keypress
         releaseKey();
-        // Serial.println(progs[currentProgram].key[currKey]);
+        // Serial.print("KEYCODE: ");#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J
+        // Serial.print(progs[currentProgram].keycodes[currKey]);
+        // Serial.print(" - KEY: ");
+        // Serial.println(progs[currentProgram].keys[currKey]);
     }
     prevStatePin = currStatePin;
 }
