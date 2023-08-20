@@ -33,6 +33,9 @@ char lcdTitle[] = "PROGRAM:";
 int count = 0;
 int LEDValue = 0;
 bool isLEDon = true;
+int waitShortTime = 5;
+int waitLongTime = 250;
+int prevTime = 0;
 
 int prevStateBUTTON_PRG;
 int currStateBUTTON_PRG;
@@ -88,21 +91,20 @@ void setup()
 
     previousStateSW = digitalRead(DRE_SW);
     previousStateCLK = digitalRead(DRE_CLK);
+    prevTime = millis();
 }
 
 void loop()
 {
 
     lcd.setCursor(0, 0);
-    lcd.print(lcdTitle);
-    lcd.setCursor(0, 1);
     lcd.print(programs[currentProgram].title);
 
     changeProgram(currStateBUTTON_PRG, prevStateBUTTON_PRG, programs, currentProgram, totalPrograms, lcd);
 
     for (int i = 2; i < MAXKEYS; i++)
     {
-        pressKey(programs[currentProgram].pins[i], i, programs[currentProgram].prevStates[i], programs, currentProgram);
+        pressKey(programs[currentProgram].pins[i], i, programs[currentProgram].prevStates[i], programs, currentProgram, lcd);
     }
 
     currentStateSW = digitalRead(DRE_SW);
@@ -112,13 +114,13 @@ void loop()
     {
         if (currentStateCLK != digitalRead(DRE_DT))
         {
-            pressKey(DRE_DT, 0, previousStateCLK, programs, currentProgram);
+            pressKey(DRE_DT, 0, previousStateCLK, programs, currentProgram, lcd);
             if (count > 0)
                 count--;
         }
         else
         {
-            pressKey(DRE_DT, 1, previousStateCLK, programs, currentProgram);
+            pressKey(DRE_DT, 1, previousStateCLK, programs, currentProgram, lcd);
             if (count < 51)
                 count++;
         }
@@ -126,7 +128,7 @@ void loop()
 
     if (currentStateSW == LOW && previousStateSW == HIGH)
     {
-        pressKey(currentStateSW, 2, previousStateSW, programs, currentProgram);
+        pressKey(currentStateSW, 2, previousStateSW, programs, currentProgram, lcd);
         isLEDon = !isLEDon;
     }
     LEDValue = isLEDon ? count * 5 : 0;
@@ -144,20 +146,38 @@ void releaseKey()
     Serial.write(buf, 8); // Send Release key
 }
 
-void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int currProg)
+void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int currProg, LiquidCrystal &display)
 {
+    int waitTime = currKey == 0 || currKey == 1 ? waitShortTime : waitLongTime;
+    int currTime = millis();
+    // Serial.print(currTime);
+    // Serial.print(" - ");
+    // Serial.print(prevTime);
+    // Serial.print(" = ");
+    // Serial.println(currTime - prevTime);
+
     int currStatePin = digitalRead(pin);
     if (currStatePin == LOW)
     {
-        buf[2] = progs[currentProgram].keycodes[currKey]; // keycode
-        Serial.write(buf, 8);                             // Send keypress
-        releaseKey();
-        // Serial.print("KEYCODE: ");#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J#J
-        // Serial.print(progs[currentProgram].keycodes[currKey]);
-        // Serial.print(" - KEY: ");
-        // Serial.println(progs[currentProgram].keys[currKey]);
+        if (currTime - prevTime > waitTime)
+        {
+            prevTime = currTime;
+            display.clear();
+            display.setCursor(0, 1);
+            display.print(progs[currentProgram].keys[currKey]);
+
+            buf[2] = progs[currentProgram].keycodes[currKey]; // keycode
+            Serial.write(buf, 8);                             // Send keypress
+            releaseKey();
+            // Serial.print("KEYCODE: ");
+            // Serial.print(progs[currentProgram].keycodes[currKey]);
+            // Serial.print(" - KEY: ");
+            // Serial.print(progs[currentProgram].keys[currKey]);
+            // Serial.print(" - CURRKEY: ");
+            // Serial.println(currKey);
+        }
+        prevStatePin = currStatePin;
     }
-    prevStatePin = currStatePin;
 }
 
 void changeProgram(int &currStatePin, int &prevStatePin, program progs[], int &currProg, int &totalProgs, LiquidCrystal &display)
