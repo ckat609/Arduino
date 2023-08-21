@@ -1,7 +1,7 @@
 #include <LiquidCrystal.h>
 #include "keycodes.h"
 
-uint8_t buf[8] = {0}; // Keyboard report buffer
+uint8_t buf[8] = {0};
 
 #define LED 12
 
@@ -16,11 +16,11 @@ uint8_t buf[8] = {0}; // Keyboard report buffer
 #define LCDPIN_D6 7
 #define LCDPIN_D7 8
 
-#define BUTTON_11 47  // Pin for w
-#define BUTTON_12 45  // Pin for a
-#define BUTTON_13 43  // Pin for s
-#define BUTTON_14 41  // Pin for d
-#define BUTTON_PRG 39 // Pin for d
+#define BUTTON_11 47
+#define BUTTON_12 45
+#define BUTTON_13 43
+#define BUTTON_14 41
+#define BUTTON_PRG 39
 
 LiquidCrystal lcd(LCDPIN_RS,
                   LCDPIN_EN,
@@ -79,10 +79,10 @@ int currentProgram = 0;
 
 void setup()
 {
-    Serial.begin(9600); // Setup Serial communication
+    Serial.begin(9600);
 
     lcd.begin(16, 2);
-    // Set pinmode of Input pins
+
     for (int i = 0; i < MAX_KEYS_BOARD; i++)
     {
         programs[currentProgram].prevStates[i] = HIGH;
@@ -151,7 +151,7 @@ void releaseKey()
 {
     buf[0] = 0;
     buf[2] = 0;
-    Serial.write(buf, 8); // Send Release key
+    Serial.write(buf, 8);
 }
 
 void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int currProg, LiquidCrystal &display)
@@ -175,14 +175,14 @@ void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int curr
                     {
                         buf[0] = key;
                         buf[2] = progs[currentProgram].keycodes[currKey].codes[i + 1];
-                        Serial.write(buf, 8); // Send keypress
+                        Serial.write(buf, 8);
                         releaseKey();
                         i++;
                     }
                     else
                     {
                         buf[2] = key;
-                        Serial.write(buf, 8); // Send keypress
+                        Serial.write(buf, 8);
                         releaseKey();
                     }
                 }
