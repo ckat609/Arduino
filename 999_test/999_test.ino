@@ -1,4 +1,5 @@
 #include <LiquidCrystal.h>
+#include "keycodes.h"
 
 uint8_t buf[8] = {0}; // Keyboard report buffer
 
@@ -51,19 +52,27 @@ int prevStateBUTTON_12;
 int prevStateBUTTON_13;
 int prevStateBUTTON_14;
 
-const int MAXKEYS = 7;
+const int MAX_KEYS_BOARD = 7;
+const int MAX_KEY_SEQ = 7;
+
 typedef struct
 {
-    char *title;
-    int keycodes[MAXKEYS];
-    char *keys[MAXKEYS];
-    int pins[MAXKEYS];
-    int prevStates[MAXKEYS];
+    int codes[MAX_KEY_SEQ];
+} keycode;
+
+typedef struct
+{
+    char title[16];
+    keycode keycodes[MAX_KEYS_BOARD];
+    char *keys[MAX_KEYS_BOARD];
+    int pins[MAX_KEYS_BOARD];
+    int prevStates[MAX_KEYS_BOARD];
 } program;
 
-program programs[3] = {{"SCULPT MODE", {87, 86, 43, 4, 22, 7, 9}, {"+", "-", "Tab", "A", "S", "D", "F"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
-                       {"TEXTURE PAINT", {87, 86, 43, 30, 31, 32, 33}, {"+", "-", "Tab", "1", "2", "3", "4"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
-                       {"GREASE PENCIL", {87, 86, 43, 20, 26, 8, 21}, {"+", "-", "Tab", "Q", "W", "E", "R"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}}};
+program programs[4] = {{"SCULPT MODE", {{KEYPAD_PLUS}, {KEYPAD_MINUS}, {KEY_CTRL, KEY_TAB, KEYPAD_2}, {KEY_X}, {KEY_SHIFT, KEY_SPACE, KEYPAD_2}, {KEY_G}, {KEY_SHIFT, KEY_SPACE, KEYPAD_6}}, {"+", "-", "Tab", "A", "S", "D", "F"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
+                       {"TEXTURE PAINT", {{KEYPAD_PLUS}, {KEYPAD_MINUS}, {KEY_CTRL, KEY_TAB, KEYPAD_9}, {KEY_X}, {KEY_SHIFT, KEY_SPACE, KEYPAD_2}, {KEY_G}, {KEY_SHIFT, KEY_SPACE, KEYPAD_6}}, {"+", "-", "Tab", "1", "2", "3", "4"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
+                       {"VERTEX PAINT", {{KEYPAD_PLUS}, {KEYPAD_MINUS}, {KEY_CTRL, KEY_TAB, KEYPAD_8}, {KEY_X}, {KEY_SHIFT, KEY_SPACE, KEYPAD_2}, {KEY_G}, {KEY_SHIFT, KEY_SPACE, KEYPAD_6}}, {"+", "-", "Tab", "Q", "W", "E", "R"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}},
+                       {"WEIGHT PAINT", {{KEYPAD_PLUS}, {KEYPAD_MINUS}, {KEY_CTRL, KEY_TAB, KEYPAD_8}, {KEY_X}, {KEY_SHIFT, KEY_SPACE, KEYPAD_2}, {KEY_G}, {KEY_SHIFT, KEY_SPACE, KEYPAD_6}}, {"+", "-", "Tab", "Q", "W", "E", "R"}, {DRE_CLK, DRE_CLK, DRE_SW, BUTTON_11, BUTTON_12, BUTTON_13, BUTTON_14}, {previousStateCLK, previousStateCLK, previousStateSW, prevStateBUTTON_11, prevStateBUTTON_12, prevStateBUTTON_13, prevStateBUTTON_14}}};
 
 int totalPrograms = (sizeof(programs) / sizeof(programs[0]));
 int currentProgram = 0;
@@ -74,7 +83,7 @@ void setup()
 
     lcd.begin(16, 2);
     // Set pinmode of Input pins
-    for (int i = 0; i < MAXKEYS; i++)
+    for (int i = 0; i < MAX_KEYS_BOARD; i++)
     {
         programs[currentProgram].prevStates[i] = HIGH;
         pinMode(programs[currentProgram].pins[i], INPUT_PULLUP);
@@ -102,7 +111,7 @@ void loop()
 
     changeProgram(currStateBUTTON_PRG, prevStateBUTTON_PRG, programs, currentProgram, totalPrograms, lcd);
 
-    for (int i = 2; i < MAXKEYS; i++)
+    for (int i = 2; i < MAX_KEYS_BOARD; i++)
     {
         pressKey(programs[currentProgram].pins[i], i, programs[currentProgram].prevStates[i], programs, currentProgram, lcd);
     }
@@ -138,7 +147,6 @@ void loop()
 
     analogWrite(LED, LEDValue);
 }
-// Function for Key Release
 void releaseKey()
 {
     buf[0] = 0;
@@ -150,11 +158,6 @@ void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int curr
 {
     int waitTime = currKey == 0 || currKey == 1 ? waitShortTime : waitLongTime;
     int currTime = millis();
-    // Serial.print(currTime);
-    // Serial.print(" - ");
-    // Serial.print(prevTime);
-    // Serial.print(" = ");
-    // Serial.println(currTime - prevTime);
 
     int currStatePin = digitalRead(pin);
     if (currStatePin == LOW)
@@ -162,22 +165,31 @@ void pressKey(int pin, int currKey, int &prevStatePin, program progs[], int curr
         if (currTime - prevTime > waitTime)
         {
             prevTime = currTime;
-            display.clear();
-            display.setCursor(0, 1);
-            display.print(progs[currentProgram].keys[currKey]);
 
-            buf[2] = progs[currentProgram].keycodes[currKey]; // keycode
-            Serial.write(buf, 8);                             // Send keypress
-            releaseKey();
-            // Serial.print("KEYCODE: ");
-            // Serial.print(progs[currentProgram].keycodes[currKey]);
-            // Serial.print(" - KEY: ");
-            // Serial.print(progs[currentProgram].keys[currKey]);
-            // Serial.print(" - CURRKEY: ");
-            // Serial.println(currKey);
+            for (int i = 0; i < MAX_KEY_SEQ; i++)
+            {
+                int key = progs[currentProgram].keycodes[currKey].codes[i];
+                if (key != 0)
+                {
+                    if (key == KEY_CTRL || key == KEY_SHIFT || key == KEY_ALT)
+                    {
+                        buf[0] = key;
+                        buf[2] = progs[currentProgram].keycodes[currKey].codes[i + 1];
+                        Serial.write(buf, 8); // Send keypress
+                        releaseKey();
+                        i++;
+                    }
+                    else
+                    {
+                        buf[2] = key;
+                        Serial.write(buf, 8); // Send keypress
+                        releaseKey();
+                    }
+                }
+            }
         }
-        prevStatePin = currStatePin;
     }
+    prevStatePin = currStatePin;
 }
 
 void changeProgram(int &currStatePin, int &prevStatePin, program progs[], int &currProg, int &totalProgs, LiquidCrystal &display)
@@ -187,7 +199,6 @@ void changeProgram(int &currStatePin, int &prevStatePin, program progs[], int &c
     {
         currProg = currProg < totalProgs - 1 ? currProg + 1 : 0;
         display.clear();
-        // Serial.println(progs[currProg].title); // Print the selected program
     }
     prevStatePin = currStatePin;
 }
