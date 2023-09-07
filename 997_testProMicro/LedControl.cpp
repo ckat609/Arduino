@@ -1,15 +1,6 @@
 #include "Arduino.h"
 #include "LedControl.h"
 
-
-//time
-#define NONE 0;
-#define BLEEP 50;
-#define SHORT 250;
-#define MEDIUM 500;
-#define LONG 1000;
-#define ERROR 2000;
-
 Led::Led(int pin)
 {
     pinMode(pin, OUTPUT);
@@ -18,7 +9,7 @@ Led::Led(int pin)
 
 void Led::on()
 {
-      digitalWrite(_pin, HIGH);
+    digitalWrite(_pin, HIGH);
 }
 
 void Led::off()
@@ -26,56 +17,48 @@ void Led::off()
     digitalWrite(_pin, LOW);
 }
 
-bool Led::status()
+bool Led::getStatus()
 {
     return digitalRead(_pin);
 }
 
-void Led::blink(char time){
-        _start = millis();
-        _duration = time;
-        digitalWrite(_pin, HIGH);
-}
-
-void Led::blink(time time){
-        _start = millis();
-        _duration = time;
-        digitalWrite(_pin, HIGH);
-}
-
-void Led::poop()
+void Led::blink(int time)
 {
-    if (_state == true && millis() - _start > _duration)
+    _start = millis();
+    _duration = time;
+
+    if (time > NONE)
     {
-        _state = false;
-        digitalWrite(_pin, LOW);
+        on();
+    }
+    else
+    {
+        _type = "error";
+        off();
     }
 }
 
-// Error::Error(int pin)
-// {
-//     pinMode(pin, OUTPUT);
-//     _pin = pin;
-//     _start = millis();
-//     _state = false;
-//     _duration = errorDuration;
-// }
+void Led::error(int time)
+{
+    _start = millis();
+    _duration = time;
+    digitalWrite(_pin, LOW);
+}
 
-// void Error::on()
-// {
-//     if (millis() - _start > _duration)
-//     {
-//         digitalWrite(_pin, HIGH);
-//     }
-// }
+void Led::check()
+{
+    if (getStatus() == HIGH && millis() - _start > _duration && _type != "error")
+    {
+        off();
+    }
 
-// void Error::off(bool state)
-// {
-//     _state = false;
-//     digitalWrite(_pin, LOW);
-// }
+    if (getStatus() == LOW && millis() - _start > LONG && _type == "error")
+    {
+        on();
+    }
+}
 
-// bool Error::getState()
-// {
-//     return _state;
-// }
+void Led::clear()
+{
+    _type = "";
+}

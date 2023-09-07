@@ -7,17 +7,9 @@ const int yellowPin = A1;
 const int redPin = A3;
 const int photoPin = A2;
 
-const int shortBlink = 250;
-const int mediumBlink = 500;
-const int longBlink = 1000;
-
 void countGummies();
 void waitTime(void (*)());
 void waitCandyState(void (*)());
-
-bool greenLedState = false;
-bool yellowLedState = false;
-bool redLedState = false;
 
 unsigned long photoStartTime = millis();
 int photoStartVal;
@@ -36,7 +28,7 @@ int gummyMax = 3;
 
 Led green(greenPin);
 Led yellow(yellowPin);
-Error red(redPin);
+Led red(redPin);
 
 void setup()
 {
@@ -49,15 +41,15 @@ void setup()
 }
 void loop()
 {
-    green.off();
-    yellow.off();
-    // red.off();
+    green.check();
+    yellow.check();
+    red.check();
     waitCandyState(photoStartVal, photoCurrentVal, photoSensitivity, photoState, countGummies);
 
     if (gummyCounter == gummyMax)
     {
         bool inLoop = true;
-        green.on();
+        green.blink(green.SHORT);
         digitalWrite(dirPin, HIGH);
 
         for (int x = 0; x < motoSteps; x++)
@@ -86,6 +78,7 @@ void waitCandyState(int startVal, int &currentVal, int delta, bool &state, void 
 
     if (state == false && startVal - currentVal >= delta)
     {
+        red.blink(red.NONE);
         state = true;
     }
 
@@ -110,7 +103,8 @@ void countGummies()
     Serial.print(" ----> TOTAL: ");
     Serial.println(gummyCounerGlobal);
 
-    yellow.on();
+    yellow.blink(yellow.BLEEP);
     gummyCounter++;
     gummyCounerGlobal++;
+    red.clear();
 }
