@@ -1,10 +1,17 @@
 #include "Arduino.h"
 #include "LedControl.h"
 
+// *************** LED ***************
+
 Led::Led(int pin)
 {
-    pinMode(pin, OUTPUT);
     _pin = pin;
+    init();
+}
+
+void Led::init()
+{
+    pinMode(_pin, OUTPUT);
 }
 
 void Led::on()
@@ -17,48 +24,77 @@ void Led::off()
     digitalWrite(_pin, LOW);
 }
 
-bool Led::getStatus()
+bool Led::getState()
 {
     return digitalRead(_pin);
 }
 
-void Led::blink(int time)
+void Led::blink()
 {
-    _start = millis();
-    _duration = time;
+    _startTime = millis();
+    _duration = SHORT;
+    on();
+}
 
-    if (time > NONE)
+void Led::blink(int duration)
+{
+    _startTime = millis();
+    _duration = duration;
+    on();
+}
+
+void Led::timeout()
+{
+    _startTime = millis();
+    _duration = TIMEOUT;
+    _isTimeout = true;
+    off();
+}
+
+void Led::timeout(int waitDuration)
+{
+    _startTime = millis();
+    _duration = waitDuration;
+    _isTimeout = true;
+    off();
+}
+
+void Led::checkBlink()
+{
+    if (getState() == HIGH && millis() - _startTime > _duration && _isTimeout)
     {
-        on();
-    }
-    else
-    {
-        _type = "error";
         off();
     }
 }
 
-void Led::error(int time)
+void Led::checkTimeout()
 {
-    _start = millis();
-    _duration = time;
-    digitalWrite(_pin, LOW);
-}
-
-void Led::check()
-{
-    if (getStatus() == HIGH && millis() - _start > _duration && _type != "error")
-    {
-        off();
-    }
-
-    if (getStatus() == LOW && millis() - _start > LONG && _type == "error")
+    if (getState() == LOW && millis() - _startTime > LONG && _isTimeout)
     {
         on();
     }
 }
 
-void Led::clear()
+void Led::clearTimeout()
 {
-    _type = "";
+    _isTimeout = false;
+}
+
+// *************** PHOTORESISTOR ***************
+
+PhotoResistor::PhotoResistor(int pin)
+{
+    _pin = pin;
+    init();
+    _startTime = read();
+}
+
+void PhotoResistor::init()
+{
+    pinMode(_pin, INPUT);
+}
+
+int PhotoResistor::read()
+{
+    return analogRead(_pin);
 }

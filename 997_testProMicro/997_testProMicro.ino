@@ -9,14 +9,12 @@ const int photoPin = A2;
 
 void countGummies();
 void waitTime(void (*)());
-void waitCandyState(void (*)());
+void countCandy(void (*)());
 
 unsigned long photoStartTime = millis();
 int photoStartVal;
 int photoCurrentVal;
 int photoSensitivity = 100;
-int photoWait = 1500;
-int photoTimeout = 2000;
 bool photoState = false;
 
 int motoSteps = 200;
@@ -36,19 +34,20 @@ void setup()
 
     pinMode(stepPin, OUTPUT);
     pinMode(dirPin, OUTPUT);
+    pinMode(photoPin, INPUT);
 
     photoStartVal = analogRead(photoPin);
 }
 void loop()
 {
-    green.check();
-    yellow.check();
-    red.check();
-    waitCandyState(photoStartVal, photoCurrentVal, photoSensitivity, photoState, countGummies);
+    green.checkBlink();
+    yellow.checkBlink();
+    red.checkTimeout();
+
+    countCandy(photoStartVal, photoCurrentVal, photoSensitivity, photoState);
 
     if (gummyCounter == gummyMax)
     {
-        bool inLoop = true;
         green.blink(green.SHORT);
         digitalWrite(dirPin, HIGH);
 
@@ -72,39 +71,37 @@ void waitTime(long unsigned &startTime, int time, void (*callBackStart)())
     }
 }
 
-void waitCandyState(int startVal, int &currentVal, int delta, bool &state, void (*callBack)())
+void countCandy(int startVal, int &currentVal, int delta, bool &state)
 {
     currentVal = analogRead(photoPin);
 
     if (state == false && startVal - currentVal >= delta)
     {
-        red.blink(red.NONE);
+        red.timeout();
         state = true;
     }
 
     if (state == true && startVal - currentVal < delta)
     {
+        Serial.print("DULCE: ");
+        Serial.print(photoStartVal);
+        Serial.print(" - ");
+        Serial.print(photoCurrentVal);
+        Serial.print(" = ");
+        Serial.print(photoStartVal - photoCurrentVal);
+        Serial.print(" ----> CURRENT: ");
+        Serial.print(gummyCounter);
+        Serial.print(" ----> TOTAL: ");
+        Serial.println(gummyCounerGlobal);
+
+        yellow.blink(yellow.BLEEP);
+        gummyCounter++;
+        gummyCounerGlobal++;
+        red.clearTimeout();
         state = false;
-        (*callBack)();
     }
 }
 
 void countGummies()
 {
-
-    Serial.print("DULCE: ");
-    Serial.print(photoStartVal);
-    Serial.print(" - ");
-    Serial.print(photoCurrentVal);
-    Serial.print(" = ");
-    Serial.print(photoStartVal - photoCurrentVal);
-    Serial.print(" ----> CURRENT: ");
-    Serial.print(gummyCounter);
-    Serial.print(" ----> TOTAL: ");
-    Serial.println(gummyCounerGlobal);
-
-    yellow.blink(yellow.BLEEP);
-    gummyCounter++;
-    gummyCounerGlobal++;
-    red.clear();
 }
