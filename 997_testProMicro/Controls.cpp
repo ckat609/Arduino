@@ -1,16 +1,12 @@
 #include "Arduino.h"
-#include "LedControl.h"
+#include "Controls.h"
 
 // *************** LED ***************
+Led::Led() {}
 
 Led::Led(int pin)
 {
     _pin = pin;
-    init();
-}
-
-void Led::init()
-{
     pinMode(_pin, OUTPUT);
 }
 
@@ -61,7 +57,7 @@ void Led::timeout(int waitDuration)
 
 void Led::checkBlink()
 {
-    if (getState() == HIGH && millis() - _startTime > _duration && _isTimeout)
+    if (getState() == HIGH && millis() - _startTime > _duration && !_isTimeout)
     {
         off();
     }
@@ -77,24 +73,72 @@ void Led::checkTimeout()
 
 void Led::clearTimeout()
 {
+    if (getState() == HIGH && millis() - _startTime > LONG && _isTimeout)
+    {
+        off();
+    }
     _isTimeout = false;
 }
 
 // *************** PHOTORESISTOR ***************
 
+PhotoResistor::PhotoResistor() {}
+
 PhotoResistor::PhotoResistor(int pin)
 {
     _pin = pin;
-    init();
-    _startTime = read();
+    pinMode(_pin, INPUT);
+    _isTriggered = false;
+    _sensitivity = MEDIUM;
+}
+
+PhotoResistor::PhotoResistor(int pin, int sensitivity)
+{
+    _pin = pin;
+    pinMode(_pin, INPUT);
+    _isTriggered = false;
+    _sensitivity = sensitivity;
 }
 
 void PhotoResistor::init()
 {
-    pinMode(_pin, INPUT);
+    _startValue = read();
 }
 
 int PhotoResistor::read()
 {
     return analogRead(_pin);
 }
+
+int PhotoResistor::getStartValue()
+{
+    return _startValue;
+}
+
+bool PhotoResistor::triggered()
+{
+    int currentValue = read();
+    bool wasTriggered = _isTriggered == false && _startValue - currentValue >= _sensitivity;
+
+    if (wasTriggered)
+    {
+        _isTriggered = true;
+    }
+
+    return wasTriggered;
+};
+
+bool PhotoResistor::passed()
+{
+    int currentValue = read();
+    bool hasPassed = _isTriggered == true && _startValue - currentValue < _sensitivity;
+
+    if (hasPassed)
+    {
+        _isTriggered = false;
+    }
+
+    return hasPassed;
+};
+
+// *************** STEPPER ***************
