@@ -7,6 +7,7 @@ Led::Led() {}
 Led::Led(int pin)
 {
     _pin = pin;
+    _state = false;
     pinMode(_pin, OUTPUT);
 }
 
@@ -20,9 +21,45 @@ void Led::off()
     digitalWrite(_pin, LOW);
 }
 
-bool Led::getState()
+bool Led::read()
 {
     return digitalRead(_pin);
+}
+
+bool Led::getState()
+{
+    return _state;
+}
+
+void Led::setState(bool state)
+{
+    if (_previousController == _currentController)
+    {
+        _state = state;
+    }
+}
+
+void Led::setState(bool state, char *controller)
+{
+    static char *ctrl;
+
+    if (_state == false && state == true && ctrl != controller)
+    {
+        _state = state;
+        ctrl = controller;
+    }
+
+    if (_state == true && state == false && ctrl == controller)
+    {
+        _state = state;
+        ctrl = controller;
+    }
+
+    if (_state == state)
+    {
+        _state = state;
+        ctrl = controller;
+    }
 }
 
 void Led::blink()
@@ -37,6 +74,35 @@ void Led::blink(int duration)
     _startTime = millis();
     _duration = duration;
     on();
+}
+
+void Led::blinker(int duration)
+{
+    static unsigned long startTime = millis();
+    static char *controller;
+
+    if (getState() == true && millis() - startTime > duration)
+    {
+        toggle();
+
+        startTime = millis();
+    }
+    if (getState() == false)
+    {
+        off();
+    }
+}
+
+void Led::toggle()
+{
+    if (read() == HIGH)
+    {
+        off();
+    }
+    else
+    {
+        on();
+    }
 }
 
 void Led::timeout()
@@ -57,7 +123,7 @@ void Led::timeout(int waitDuration)
 
 void Led::checkBlink()
 {
-    if (getState() == HIGH && millis() - _startTime > _duration && !_isTimeout)
+    if (read() == HIGH && millis() - _startTime > _duration && !_isTimeout)
     {
         off();
     }
@@ -65,7 +131,7 @@ void Led::checkBlink()
 
 void Led::checkTimeout()
 {
-    if (getState() == LOW && millis() - _startTime > LONG && _isTimeout)
+    if (read() == LOW && millis() - _startTime > LONG && _isTimeout)
     {
         on();
     }
@@ -73,7 +139,7 @@ void Led::checkTimeout()
 
 void Led::clearTimeout()
 {
-    if (getState() == HIGH && millis() - _startTime > LONG && _isTimeout)
+    if (read() == HIGH && millis() - _startTime > LONG && _isTimeout)
     {
         off();
     }
@@ -118,7 +184,7 @@ int PhotoResistor::getStartValue()
 bool PhotoResistor::triggered()
 {
     int currentValue = read();
-    bool wasTriggered = _isTriggered == false && _startValue - currentValue >= _sensitivity;
+    bool wasTriggered = _isTriggered == false && abs(_startValue - currentValue) >= _sensitivity;
 
     if (wasTriggered)
     {
@@ -131,7 +197,7 @@ bool PhotoResistor::triggered()
 bool PhotoResistor::passed()
 {
     int currentValue = read();
-    bool hasPassed = _isTriggered == true && _startValue - currentValue < _sensitivity;
+    bool hasPassed = _isTriggered == true && abs(_startValue - currentValue) < _sensitivity;
 
     if (hasPassed)
     {
@@ -142,3 +208,56 @@ bool PhotoResistor::passed()
 };
 
 // *************** STEPPER ***************
+
+Stepper::Stepper(){
+
+};
+
+Stepper::Stepper(int stepPin, int directionPin)
+{
+    _stepPin = stepPin;
+    _directionPin = directionPin;
+    pinMode(_stepPin, OUTPUT);
+    pinMode(_directionPin, OUTPUT);
+    digitalWrite(_directionPin, CW);
+}
+
+Stepper::Stepper(int stepPin, int directionPin, bool direction)
+{
+    _stepPin = stepPin;
+    _directionPin = directionPin;
+    pinMode(_stepPin, OUTPUT);
+    pinMode(_directionPin, OUTPUT);
+    digitalWrite(_directionPin, direction);
+}
+
+void Stepper::step()
+{
+    digitalWrite(_stepPin, HIGH);
+    delayMicroseconds(STEP_DELAY);
+    digitalWrite(_stepPin, LOW);
+    delayMicroseconds(STEP_DELAY);
+}
+
+void Stepper::step(bool direction)
+{
+    digitalWrite(_directionPin, direction);
+    digitalWrite(_stepPin, HIGH);
+    delayMicroseconds(STEP_DELAY);
+    digitalWrite(_stepPin, LOW);
+    delayMicroseconds(STEP_DELAY);
+}
+
+void Stepper::cw()
+{
+    digitalWrite(_directionPin, HIGH);
+}
+void Stepper::ccw()
+{
+    digitalWrite(_directionPin, LOW);
+}
+
+bool Stepper::getDirection()
+{
+    digitalRead(_directionPin);
+}

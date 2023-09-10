@@ -2,56 +2,62 @@
 
 const int stepPin = 3;
 const int dirPin = 4;
-const int greenPin = 7;
-const int yellowPin = 8;
-const int redPin = 9;
+const int ledGreenPin = 7;
+const int ledYellowPin = 8;
+const int ledRedPin = 9;
 const int photoPin = A2;
 
 // void waitTime(void (*)());
-
-int motoSteps = 200;
-int motoStepsDelay = 500;
 
 int gummyCounter = 0;
 int gummyCounerGlobal = 0;
 int gummyMax = 3;
 
-Led green(greenPin);
-Led yellow(yellowPin);
-Led red(redPin);
+Led ledGreen(ledGreenPin);
+Led ledYellow(ledYellowPin);
+Led ledRed(ledRedPin);
 
 PhotoResistor pr1(photoPin);
+
+Stepper stepper1(stepPin, dirPin);
 
 void setup()
 {
     Serial.begin(115200);
 
-    pinMode(stepPin, OUTPUT);
-    pinMode(dirPin, OUTPUT);
+    // pinMode(stepPin, OUTPUT);
+    // pinMode(dirPin, OUTPUT);
+    pinMode(10, INPUT_PULLUP);
+    pinMode(16, INPUT_PULLUP);
 
     pr1.init();
 }
 void loop()
 {
-    green.checkBlink();
-    yellow.checkBlink();
-    red.checkTimeout();
-
+    ledRed.blinker(100);
+    ledGreen.checkBlink();
+    ledYellow.checkBlink();
+    ledRed.checkTimeout();
     countCandy();
 
-    if (gummyCounter == gummyMax)
+    if (digitalRead(16) == LOW)
     {
-        green.blink(green.SHORT);
-        digitalWrite(dirPin, HIGH);
+        stepper1.step(stepper1.CCW);
+        ledRed.setState(true, "redButton");
+    }
+    else
+    {
+        ledRed.setState(false);
+    }
 
-        for (int x = 0; x < motoSteps; x++)
-        {
-            digitalWrite(stepPin, HIGH);
-            delayMicroseconds(motoStepsDelay);
-            digitalWrite(stepPin, LOW);
-            delayMicroseconds(motoStepsDelay);
-        }
-        gummyCounter = 0;
+    if (digitalRead(10) == LOW)
+    {
+        stepper1.step(stepper1.CW);
+        ledRed.setState(true, "greenButton");
+    }
+    else
+    {
+        ledRed.setState(false);
     }
 }
 
@@ -68,7 +74,7 @@ void countCandy()
 {
     if (pr1.triggered())
     {
-        red.timeout();
+        ledRed.timeout();
     }
 
     if (pr1.passed())
@@ -84,9 +90,26 @@ void countCandy()
         Serial.print(" ----> TOTAL: ");
         Serial.println(gummyCounerGlobal);
 
-        yellow.blink();
-        red.clearTimeout();
+        ledYellow.blink();
+        ledRed.clearTimeout();
         gummyCounter++;
         gummyCounerGlobal++;
+    }
+
+    checkMaxCandy();
+}
+
+void checkMaxCandy()
+{
+    if (gummyCounter == gummyMax)
+    {
+        ledGreen.blink(ledGreen.SHORT);
+        stepper1.cw();
+
+        for (int x = 0; x < 200; x++)
+        {
+            stepper1.step();
+        }
+        gummyCounter = 0;
     }
 }

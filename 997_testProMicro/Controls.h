@@ -16,10 +16,15 @@ public:
     Led(int pin);
     void on();
     void off();
+    bool read();
     bool getState();
+    void setState(bool stated);
+    void setState(bool state, char *controller);
     void blink();
     void blink(int duration);
+    void blinker(int duration);
     void checkBlink();
+    void toggle();
     void timeout();
     void timeout(int waitDuration);
     void checkTimeout();
@@ -30,6 +35,7 @@ private:
     int _pin;
     int _duration;
     bool _isTimeout;
+    bool _state;
 };
 
 class PhotoResistor
@@ -64,14 +70,23 @@ class Stepper
 {
 public:
     static const int STEPS_FULL_REV = 200;
-    static const int motoStepsDelay = 500;
+    static const int STEP_DELAY = 500;
     static const bool CW = HIGH;
     static const bool CCW = LOW;
 
     Stepper();
-    Stepper(int stepPin, bool directionPin);
+    Stepper(int stepPin, int directionPin);
+    Stepper(int stepPin, int directionPin, bool direction);
+    void step();
+    void step(bool direction);
+    void cw();
+    void ccw();
+    bool getDirection();
 
 private:
+    int _stepPin;
+    int _directionPin;
+    bool _direction;
 };
 
 #endif
