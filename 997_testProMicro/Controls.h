@@ -36,9 +36,11 @@ private:
     int _duration;
     bool _isTimeout;
     bool _state;
+    char *_controller;
+    char *_previousController;
 };
 
-class PhotoResistor
+class IR
 {
 public:
     // sensitivities
@@ -47,11 +49,12 @@ public:
     static const int LARGE = 250;
     static const int HUGE = 500;
 
-    PhotoResistor();
-    PhotoResistor(int pin);
-    PhotoResistor(int pin, int sensitivity);
+    IR();
+    IR(int pin);
+    IR(int pin, int sensitivity);
     void init();
-    int read();
+    int aRead();
+    int dRead();
     int getStartValue();
     bool triggered();
     bool passed();

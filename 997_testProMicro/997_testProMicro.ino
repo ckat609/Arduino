@@ -5,7 +5,7 @@ const int dirPin = 4;
 const int ledGreenPin = 7;
 const int ledYellowPin = 8;
 const int ledRedPin = 9;
-const int photoPin = A2;
+const int photoPin = 6;
 
 // void waitTime(void (*)());
 
@@ -17,7 +17,7 @@ Led ledGreen(ledGreenPin);
 Led ledYellow(ledYellowPin);
 Led ledRed(ledRedPin);
 
-PhotoResistor pr1(photoPin);
+IR pr1(photoPin);
 
 Stepper stepper1(stepPin, dirPin);
 
@@ -40,6 +40,8 @@ void loop()
     ledRed.checkTimeout();
     countCandy();
 
+    Serial.println(digitalRead(6));
+
     if (digitalRead(16) == LOW)
     {
         stepper1.step(stepper1.CCW);
@@ -47,7 +49,7 @@ void loop()
     }
     else
     {
-        ledRed.setState(false);
+        ledRed.setState(false, "redButton");
     }
 
     if (digitalRead(10) == LOW)
@@ -57,7 +59,7 @@ void loop()
     }
     else
     {
-        ledRed.setState(false);
+        ledRed.setState(false, "greenButton");
     }
 }
 
@@ -82,15 +84,15 @@ void countCandy()
         Serial.print("DULCE: ");
         Serial.print(pr1.getStartValue());
         Serial.print(" - ");
-        Serial.print(pr1.read());
+        Serial.print(pr1.dRead());
         Serial.print(" = ");
-        Serial.print(pr1.getStartValue() - pr1.read());
+        Serial.print(pr1.getStartValue() - pr1.dRead());
         Serial.print(" ----> CURRENT: ");
         Serial.print(gummyCounter);
         Serial.print(" ----> TOTAL: ");
         Serial.println(gummyCounerGlobal);
 
-        ledYellow.blink();
+        ledYellow.blink(ledYellow.BLEEP);
         ledRed.clearTimeout();
         gummyCounter++;
         gummyCounerGlobal++;

@@ -31,35 +31,27 @@ bool Led::getState()
     return _state;
 }
 
-void Led::setState(bool state)
-{
-    if (_previousController == _currentController)
-    {
-        _state = state;
-    }
-}
-
 void Led::setState(bool state, char *controller)
 {
     static char *ctrl;
-
-    if (_state == false && state == true && ctrl != controller)
+    if (_state == false && state == true && _controller != controller)
     {
         _state = state;
-        ctrl = controller;
+        _controller = controller;
     }
 
-    if (_state == true && state == false && ctrl == controller)
+    if (_state == true && state == false && _controller == controller)
     {
         _state = state;
-        ctrl = controller;
+        _controller = controller;
     }
 
     if (_state == state)
     {
         _state = state;
-        ctrl = controller;
+        _controller = controller;
     }
+    _previousController = _controller;
 }
 
 void Led::blink()
@@ -146,11 +138,11 @@ void Led::clearTimeout()
     _isTimeout = false;
 }
 
-// *************** PHOTORESISTOR ***************
+// *************** IR ***************
 
-PhotoResistor::PhotoResistor() {}
+IR::IR() {}
 
-PhotoResistor::PhotoResistor(int pin)
+IR::IR(int pin)
 {
     _pin = pin;
     pinMode(_pin, INPUT);
@@ -158,7 +150,7 @@ PhotoResistor::PhotoResistor(int pin)
     _sensitivity = MEDIUM;
 }
 
-PhotoResistor::PhotoResistor(int pin, int sensitivity)
+IR::IR(int pin, int sensitivity)
 {
     _pin = pin;
     pinMode(_pin, INPUT);
@@ -166,25 +158,30 @@ PhotoResistor::PhotoResistor(int pin, int sensitivity)
     _sensitivity = sensitivity;
 }
 
-void PhotoResistor::init()
+void IR::init()
 {
-    _startValue = read();
+    _startValue = dRead();
 }
 
-int PhotoResistor::read()
+int IR::aRead()
 {
     return analogRead(_pin);
 }
 
-int PhotoResistor::getStartValue()
+int IR::dRead()
+{
+    return digitalRead(_pin);
+}
+
+int IR::getStartValue()
 {
     return _startValue;
 }
 
-bool PhotoResistor::triggered()
+bool IR::triggered()
 {
-    int currentValue = read();
-    bool wasTriggered = _isTriggered == false && abs(_startValue - currentValue) >= _sensitivity;
+    int currentValue = dRead();
+    bool wasTriggered = _isTriggered == false && dRead() == LOW;
 
     if (wasTriggered)
     {
@@ -194,10 +191,10 @@ bool PhotoResistor::triggered()
     return wasTriggered;
 };
 
-bool PhotoResistor::passed()
+bool IR::passed()
 {
-    int currentValue = read();
-    bool hasPassed = _isTriggered == true && abs(_startValue - currentValue) < _sensitivity;
+    int currentValue = dRead();
+    bool hasPassed = _isTriggered == true && dRead() == HIGH;
 
     if (hasPassed)
     {
