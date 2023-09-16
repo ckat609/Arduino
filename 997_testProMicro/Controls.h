@@ -73,23 +73,46 @@ class Stepper
 {
 public:
     static const int STEPS_FULL_REV = 200;
-    static const int STEP_DELAY = 500;
+    static const int STEP_DELAY_SLOW = 5000;
+    static const int STEP_DELAY_MEDIUM = 2500;
+    static const int STEP_DELAY_FAST = 1500;
+    static const int STEP_DELAY_ULTRA = 500;
+    static const int ZERO_PULL_BACK_STEPS = 5;
     static const bool CW = HIGH;
     static const bool CCW = LOW;
 
     Stepper();
     Stepper(int stepPin, int directionPin);
     Stepper(int stepPin, int directionPin, bool direction);
+    Stepper(int stepPin, int directionPin, int delayTime, bool direction);
     void step();
     void step(bool direction);
+    void stop();
     void cw();
     void ccw();
+    void setDirection(bool direction);
     bool getDirection();
+    void setDelayTime(int delayTime);
+    int getDelayTime();
+    void setState(int state);
+    int getState();
+    void home();
+    void zero();
+    void move();
 
 private:
     int _stepPin;
     int _directionPin;
     bool _direction;
+    int _delayTime;
+    bool _moving;
+    int _state;
+    enum states
+    {
+        NONE,
+        HOME,
+        ZERO
+    };
 };
 
 #endif

@@ -105,20 +105,20 @@ void Led::timeout()
     off();
 }
 
-void Led::timeout(int waitDuration)
-{
-    _startTime = millis();
-    _duration = waitDuration;
-    _isTimeout = true;
-    off();
-}
-
 void Led::checkBlink()
 {
     if (read() == HIGH && millis() - _startTime > _duration && !_isTimeout)
     {
         off();
     }
+}
+
+void Led::timeout(int waitDuration)
+{
+    _startTime = millis();
+    _duration = waitDuration;
+    _isTimeout = true;
+    off();
 }
 
 void Led::checkTimeout()
@@ -223,6 +223,17 @@ Stepper::Stepper(int stepPin, int directionPin, bool direction)
 {
     _stepPin = stepPin;
     _directionPin = directionPin;
+    _delayTime = STEP_DELAY_MEDIUM;
+    pinMode(_stepPin, OUTPUT);
+    pinMode(_directionPin, OUTPUT);
+    digitalWrite(_directionPin, direction);
+}
+
+Stepper::Stepper(int stepPin, int directionPin, int delayTime, bool direction)
+{
+    _stepPin = stepPin;
+    _directionPin = directionPin;
+    _delayTime = delayTime;
     pinMode(_stepPin, OUTPUT);
     pinMode(_directionPin, OUTPUT);
     digitalWrite(_directionPin, direction);
@@ -230,19 +241,25 @@ Stepper::Stepper(int stepPin, int directionPin, bool direction)
 
 void Stepper::step()
 {
+    digitalWrite(_directionPin, _direction);
     digitalWrite(_stepPin, HIGH);
-    delayMicroseconds(STEP_DELAY);
+    delayMicroseconds(_delayTime);
     digitalWrite(_stepPin, LOW);
-    delayMicroseconds(STEP_DELAY);
+    delayMicroseconds(_delayTime);
 }
 
 void Stepper::step(bool direction)
 {
     digitalWrite(_directionPin, direction);
     digitalWrite(_stepPin, HIGH);
-    delayMicroseconds(STEP_DELAY);
+    delayMicroseconds(_delayTime);
     digitalWrite(_stepPin, LOW);
-    delayMicroseconds(STEP_DELAY);
+    delayMicroseconds(_delayTime);
+}
+
+void Stepper::stop()
+{
+    _moving = false;
 }
 
 void Stepper::cw()
@@ -254,7 +271,92 @@ void Stepper::ccw()
     digitalWrite(_directionPin, LOW);
 }
 
+void Stepper::setDirection(bool direction)
+{
+    _direction = direction;
+}
+
 bool Stepper::getDirection()
 {
-    digitalRead(_directionPin);
+    return _direction;
+}
+
+void Stepper::setDelayTime(int delayTime)
+{
+    _delayTime = delayTime;
+}
+
+int Stepper::getDelayTime()
+{
+    return _delayTime;
+}
+
+void Stepper::setState(int state)
+{
+    _state = state;
+}
+
+int Stepper::getState()
+{
+    return _state;
+}
+
+void Stepper::home()
+{
+    _moving = true;
+    _state = HOME;
+    _delayTime = STEP_DELAY_FAST;
+    _direction = CW;
+}
+
+void Stepper::zero()
+{
+    _state = ZERO;
+    _delayTime = STEP_DELAY_SLOW;
+    _direction = CCW;
+}
+
+void Stepper::move()
+{
+    static int zeroStepCounter = 0;
+
+    if (_moving)
+    {
+        step();
+        switch (_state)
+        {
+        case (ZERO):
+            zeroStepCounter++;
+            if (zeroStepCounter == ZERO_PULL_BACK_STEPS)
+            {
+                _state = NONE;
+                zeroStepCounter = 0;
+            };
+            break;
+        case (HOME):
+            break;
+        case (NONE):
+            stop();
+            break;
+        default:
+            break;
+        }
+    }
+
+    // if (sstate != true)
+    // {
+    //     step();
+    //     if (_zero == true)
+    //     {
+    //         Serial.print("ZERO: ");
+    //         Serial.println(zeroStepCounter);
+    //         zeroStepCounter++;
+    //         if (zeroStepCounter == ZERO_PULL_BACK_STEPS)
+    //         {
+    //             _zero = false;
+    //             _state = false;
+    //             zeroStepCounter = 0;
+    //         };
+    //     }
+    // }
 }

@@ -31,6 +31,7 @@ void setup()
     pinMode(16, INPUT_PULLUP);
 
     pr1.init();
+    stepper1.home();
 }
 void loop()
 {
@@ -38,13 +39,15 @@ void loop()
     ledGreen.checkBlink();
     ledYellow.checkBlink();
     ledRed.checkTimeout();
+    stepper1.move();
     countCandy();
 
-    Serial.println(digitalRead(6));
+    // Serial.println(digitalRead(6));
 
     if (digitalRead(16) == LOW)
     {
-        stepper1.step(stepper1.CCW);
+        // stepper1.step(stepper1.CCW);
+        stepper1.zero();
         ledRed.setState(true, "redButton");
     }
     else
@@ -54,7 +57,8 @@ void loop()
 
     if (digitalRead(10) == LOW)
     {
-        stepper1.step(stepper1.CW);
+        // stepper1.step(stepper1.CW);
+        stepper1.home();
         ledRed.setState(true, "greenButton");
     }
     else
