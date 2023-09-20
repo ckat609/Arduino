@@ -26,36 +26,9 @@ bool Led::read()
     return digitalRead(_pin);
 }
 
-bool Led::getState()
-{
-    return _state;
-}
-
-void Led::setState(bool state, char *controller)
-{
-    static char *ctrl;
-    if (_state == false && state == true && _controller != controller)
-    {
-        _state = state;
-        _controller = controller;
-    }
-
-    if (_state == true && state == false && _controller == controller)
-    {
-        _state = state;
-        _controller = controller;
-    }
-
-    if (_state == state)
-    {
-        _state = state;
-        _controller = controller;
-    }
-    _previousController = _controller;
-}
-
 void Led::blink()
 {
+    _state = BLINK;
     _startTime = millis();
     _duration = SHORT;
     on();
@@ -63,6 +36,7 @@ void Led::blink()
 
 void Led::blink(int duration)
 {
+    _state = BLINK;
     _startTime = millis();
     _duration = duration;
     on();
@@ -70,19 +44,9 @@ void Led::blink(int duration)
 
 void Led::blinker(int duration)
 {
-    static unsigned long startTime = millis();
-    static char *controller;
-
-    if (getState() == true && millis() - startTime > duration)
-    {
-        toggle();
-
-        startTime = millis();
-    }
-    if (getState() == false)
-    {
-        off();
-    }
+    _state = BLINKER;
+    _startTime = millis();
+    _duration = duration;
 }
 
 void Led::toggle()
@@ -99,43 +63,67 @@ void Led::toggle()
 
 void Led::timeout()
 {
+    _state = TIMEOUT;
     _startTime = millis();
-    _duration = TIMEOUT;
-    _isTimeout = true;
-    off();
-}
-
-void Led::checkBlink()
-{
-    if (read() == HIGH && millis() - _startTime > _duration && !_isTimeout)
-    {
-        off();
-    }
+    _duration = 1000;
 }
 
 void Led::timeout(int waitDuration)
 {
+    _state = TIMEOUT;
     _startTime = millis();
     _duration = waitDuration;
-    _isTimeout = true;
-    off();
 }
 
-void Led::checkTimeout()
+void Led::clear()
 {
-    if (read() == LOW && millis() - _startTime > LONG && _isTimeout)
-    {
-        on();
-    }
+    _state = NONE;
 }
 
-void Led::clearTimeout()
+void Led::check()
 {
-    if (read() == HIGH && millis() - _startTime > LONG && _isTimeout)
+
+    switch (_state)
     {
+    case (NONE):
         off();
+        break;
+    case (BLINK):
+        if (millis() - _startTime > _duration)
+        {
+            off();
+        }
+        break;
+    case (BLINKER):
+        static long unsigned stBlinker = millis();
+        if (millis() - stBlinker > _duration)
+        {
+            toggle();
+            stBlinker = millis();
+            if (read() == LOW)
+            {
+                _state = NONE;
+            }
+        }
+        break;
+    case (TIMEOUT):
+        // static long unsigned _startTime = millis();
+        if (read() == LOW && millis() - _startTime > _duration)
+        {
+            on();
+        }
+        // if (read() == HIGH && millis() - stTimeout > _duration)
+        // {
+        //     off();
+        // }
+        // if (millis() - _startTime > _duration)
+        // {
+        //     on();
+        // }
+        break;
+    default:
+        break;
     }
-    _isTimeout = false;
 }
 
 // *************** IR ***************
@@ -146,7 +134,7 @@ IR::IR(int pin)
 {
     _pin = pin;
     pinMode(_pin, INPUT);
-    _isTriggered = false;
+    _state = NONE;
     _sensitivity = MEDIUM;
 }
 
@@ -154,7 +142,7 @@ IR::IR(int pin, int sensitivity)
 {
     _pin = pin;
     pinMode(_pin, INPUT);
-    _isTriggered = false;
+    _state = NONE;
     _sensitivity = sensitivity;
 }
 
@@ -173,36 +161,42 @@ int IR::dRead()
     return digitalRead(_pin);
 }
 
-int IR::getStartValue()
+int IR::check()
 {
-    return _startValue;
+    switch (_state)
+    {
+    case (NONE):
+
+        if (dRead() == LOW)
+        {
+            _state = TRIGGERED;
+            return _state;
+        }
+        break;
+    case (TRIGGERED):
+        if (dRead() == LOW)
+        {
+            _state = WAITING;
+            return _state;
+        }
+        break;
+    case (WAITING):
+        if (dRead() == HIGH)
+        {
+            _state = PASSED;
+            return _state;
+        }
+        break;
+    case (PASSED):
+        if (dRead() == HIGH)
+        {
+            _state = NONE;
+            return _state;
+        }
+        break;
+    }
+    return _state;
 }
-
-bool IR::triggered()
-{
-    int currentValue = dRead();
-    bool wasTriggered = _isTriggered == false && dRead() == LOW;
-
-    if (wasTriggered)
-    {
-        _isTriggered = true;
-    }
-
-    return wasTriggered;
-};
-
-bool IR::passed()
-{
-    int currentValue = dRead();
-    bool hasPassed = _isTriggered == true && dRead() == HIGH;
-
-    if (hasPassed)
-    {
-        _isTriggered = false;
-    }
-
-    return hasPassed;
-};
 
 // *************** STEPPER ***************
 
@@ -264,11 +258,11 @@ void Stepper::stop()
 
 void Stepper::cw()
 {
-    digitalWrite(_directionPin, HIGH);
+    _direction = HIGH;
 }
 void Stepper::ccw()
 {
-    digitalWrite(_directionPin, LOW);
+    _direction = LOW;
 }
 
 void Stepper::setDirection(bool direction)
@@ -301,14 +295,6 @@ int Stepper::getState()
     return _state;
 }
 
-void Stepper::home()
-{
-    _moving = true;
-    _state = HOME;
-    _delayTime = STEP_DELAY_FAST;
-    _direction = CW;
-}
-
 void Stepper::zero()
 {
     _state = ZERO;
@@ -316,47 +302,152 @@ void Stepper::zero()
     _direction = CCW;
 }
 
+void Stepper::home()
+{
+    _moving = true;
+    _state = HOME;
+    _delayTime = STEP_DELAY_FAST;
+}
+
+void Stepper::bag()
+{
+    _moving = true;
+    _state = BAG;
+    _delayTime = STEP_DELAY_FAST;
+}
+
+void Stepper::funnel()
+{
+    _moving = true;
+    _state = FUNNEL;
+    _delayTime = STEP_DELAY_FAST;
+}
+
+void Stepper::sucker()
+{
+    _moving = true;
+    _state = SUCKER;
+    _delayTime = STEP_DELAY_FAST;
+}
+
+void Stepper::drop()
+{
+    _moving = true;
+    _state = DROP;
+    _delayTime = STEP_DELAY_FAST;
+}
+
 void Stepper::move()
 {
-    static int zeroStepCounter = 0;
-
     if (_moving)
     {
-        step();
+        // step();
         switch (_state)
         {
+        case (NONE):
+            stop();
+            break;
         case (ZERO):
+            static int zeroStepCounter = 0;
             zeroStepCounter++;
+
             if (zeroStepCounter == ZERO_PULL_BACK_STEPS)
             {
                 _state = NONE;
                 zeroStepCounter = 0;
+                POSITION_ZERO = 0;
             };
             break;
         case (HOME):
+            if (_position > POSITION_HOME)
+            {
+                _position--;
+                cw();
+            }
+
+            if (_position < POSITION_HOME)
+            {
+                _position++;
+                ccw();
+            }
+
+            if (_position == POSITION_HOME)
+            {
+                _state = NONE;
+            }
+            else
+            {
+                step();
+            }
             break;
-        case (NONE):
-            stop();
+        case (BAG):
+            if (_position > POSITION_BAG)
+            {
+                _position--;
+                cw();
+            }
+
+            if (_position < POSITION_BAG)
+            {
+                _position++;
+                ccw();
+            }
+
+            if (_position == POSITION_BAG)
+            {
+                _state = NONE;
+            }
+            else
+            {
+                step();
+            }
+            break;
+        case (FUNNEL):
+            if (_position > POSITION_FUNNEL)
+            {
+                _position--;
+                cw();
+            }
+
+            if (_position < POSITION_FUNNEL)
+            {
+                _position++;
+                ccw();
+            }
+
+            if (_position == POSITION_FUNNEL)
+            {
+                _state = NONE;
+            }
+            else
+            {
+                step();
+            }
+            break;
+        case (DROP):
+            if (_position > POSITION_DROP)
+            {
+                _position--;
+                cw();
+            }
+
+            if (_position < POSITION_DROP)
+            {
+                _position++;
+                ccw();
+            }
+
+            if (_position == POSITION_DROP)
+            {
+                _state = NONE;
+            }
+            else
+            {
+                step();
+            }
             break;
         default:
             break;
         }
     }
-
-    // if (sstate != true)
-    // {
-    //     step();
-    //     if (_zero == true)
-    //     {
-    //         Serial.print("ZERO: ");
-    //         Serial.println(zeroStepCounter);
-    //         zeroStepCounter++;
-    //         if (zeroStepCounter == ZERO_PULL_BACK_STEPS)
-    //         {
-    //             _zero = false;
-    //             _state = false;
-    //             zeroStepCounter = 0;
-    //         };
-    //     }
-    // }
 }

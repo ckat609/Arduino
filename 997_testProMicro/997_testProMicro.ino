@@ -31,39 +31,26 @@ void setup()
     pinMode(16, INPUT_PULLUP);
 
     pr1.init();
-    stepper1.home();
+    // stepper1.home();
 }
 void loop()
 {
-    ledRed.blinker(100);
-    ledGreen.checkBlink();
-    ledYellow.checkBlink();
-    ledRed.checkTimeout();
+    ledGreen.check();
+    ledYellow.check();
+    ledRed.check();
     stepper1.move();
     countCandy();
 
-    // Serial.println(digitalRead(6));
-
     if (digitalRead(16) == LOW)
     {
-        // stepper1.step(stepper1.CCW);
-        stepper1.zero();
-        ledRed.setState(true, "redButton");
-    }
-    else
-    {
-        ledRed.setState(false, "redButton");
+        stepper1.home();
+        ledRed.blinker(100);
     }
 
     if (digitalRead(10) == LOW)
     {
-        // stepper1.step(stepper1.CW);
-        stepper1.home();
-        ledRed.setState(true, "greenButton");
-    }
-    else
-    {
-        ledRed.setState(false, "greenButton");
+        stepper1.bag();
+        ledRed.blinker(100);
     }
 }
 
@@ -78,28 +65,24 @@ void waitTime(long unsigned &startTime, int time, void (*callBackStart)())
 
 void countCandy()
 {
-    if (pr1.triggered())
+    int checked = pr1.check();
+    if (checked == pr1.TRIGGERED)
     {
         ledRed.timeout();
     }
 
-    if (pr1.passed())
+    if (checked == pr1.PASSED)
     {
-        Serial.print("DULCE: ");
-        Serial.print(pr1.getStartValue());
-        Serial.print(" - ");
-        Serial.print(pr1.dRead());
-        Serial.print(" = ");
-        Serial.print(pr1.getStartValue() - pr1.dRead());
+
+        ledYellow.blink(ledYellow.BLEEP);
+        ledRed.clear();
+        gummyCounter++;
+        gummyCounerGlobal++;
+
         Serial.print(" ----> CURRENT: ");
         Serial.print(gummyCounter);
         Serial.print(" ----> TOTAL: ");
         Serial.println(gummyCounerGlobal);
-
-        ledYellow.blink(ledYellow.BLEEP);
-        ledRed.clearTimeout();
-        gummyCounter++;
-        gummyCounerGlobal++;
     }
 
     checkMaxCandy();
@@ -107,14 +90,21 @@ void countCandy()
 
 void checkMaxCandy()
 {
+    int maxSteps = 200;
+    static int currStep = 0;
+
     if (gummyCounter == gummyMax)
     {
         ledGreen.blink(ledGreen.SHORT);
         stepper1.cw();
 
-        for (int x = 0; x < 200; x++)
+        if (currStep < maxSteps)
         {
             stepper1.step();
+        }
+        else
+        {
+            currStep = 0;
         }
         gummyCounter = 0;
     }

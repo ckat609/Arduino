@@ -10,34 +10,34 @@ public:
     static const int SHORT = 250;
     static const int MEDIUM = 500;
     static const int LONG = 1000;
-    static const int TIMEOUT = 5000;
+    static const int OUT = 1000;
 
     Led();
     Led(int pin);
     void on();
     void off();
     bool read();
-    bool getState();
-    void setState(bool stated);
-    void setState(bool state, char *controller);
     void blink();
     void blink(int duration);
     void blinker(int duration);
-    void checkBlink();
+    void check();
     void toggle();
     void timeout();
     void timeout(int waitDuration);
-    void checkTimeout();
-    void clearTimeout();
+    void clear();
 
 private:
-    long unsigned _startTime;
     int _pin;
+    long unsigned _startTime;
     int _duration;
-    bool _isTimeout;
-    bool _state;
-    char *_controller;
-    char *_previousController;
+    int _state;
+    enum _states
+    {
+        NONE,
+        BLINK,
+        BLINKER,
+        TIMEOUT,
+    };
 };
 
 class IR
@@ -48,6 +48,13 @@ public:
     static const int MEDIUM = 100;
     static const int LARGE = 250;
     static const int HUGE = 500;
+    enum _states
+    {
+        NONE,
+        TRIGGERED,
+        WAITING,
+        PASSED
+    };
 
     IR();
     IR(int pin);
@@ -55,18 +62,14 @@ public:
     void init();
     int aRead();
     int dRead();
-    int getStartValue();
-    bool triggered();
-    bool passed();
+    int check();
 
 private:
     int _pin;
     int _sensitivity;
     int _startValue;
     int _currentValue;
-    bool _isTriggered;
-    Led _passedLed;
-    Led _timeoutLed;
+    int _state;
 };
 
 class Stepper
@@ -96,9 +99,13 @@ public:
     int getDelayTime();
     void setState(int state);
     int getState();
-    void home();
-    void zero();
     void move();
+    void zero();
+    void home();
+    void bag();
+    void funnel();
+    void sucker();
+    void drop();
 
 private:
     int _stepPin;
@@ -107,11 +114,22 @@ private:
     int _delayTime;
     bool _moving;
     int _state;
-    enum states
+    int _position = 0;
+    int POSITION_ZERO = 0;
+    int POSITION_HOME = 0;
+    int POSITION_BAG = 200;
+    int POSITION_FUNNEL = 300;
+    int POSITION_DROP = 500;
+
+    enum _states
     {
         NONE,
+        ZERO,
         HOME,
-        ZERO
+        BAG,
+        FUNNEL,
+        SUCKER,
+        DROP
     };
 };
 
