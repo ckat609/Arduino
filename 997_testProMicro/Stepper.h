@@ -1,76 +1,6 @@
-#ifndef Controls_h
-#define Controls_h
+#ifndef Stepper_h
+#define Stepper_h
 #include "Arduino.h"
-
-class Led
-{
-public:
-    // blink times
-    static const int BLEEP = 50;
-    static const int SHORT = 250;
-    static const int MEDIUM = 500;
-    static const int LONG = 1000;
-    static const int OUT = 1000;
-
-    Led();
-    Led(int pin);
-    void on();
-    void off();
-    bool read();
-    void blink();
-    void blink(int duration);
-    void blinker(int duration);
-    void check();
-    void toggle();
-    void timeout();
-    void timeout(int waitDuration);
-    void clear();
-
-private:
-    int _pin;
-    long unsigned _startTime;
-    int _duration;
-    int _state;
-    enum _states
-    {
-        NONE,
-        BLINK,
-        BLINKER,
-        TIMEOUT,
-    };
-};
-
-class IR
-{
-public:
-    // sensitivities
-    static const int SMALL = 50;
-    static const int MEDIUM = 100;
-    static const int LARGE = 250;
-    static const int HUGE = 500;
-    enum _states
-    {
-        NONE,
-        TRIGGERED,
-        WAITING,
-        PASSED
-    };
-
-    IR();
-    IR(int pin);
-    IR(int pin, int sensitivity);
-    void init();
-    int aRead();
-    int dRead();
-    int check();
-
-private:
-    int _pin;
-    int _sensitivity;
-    int _startValue;
-    int _currentValue;
-    int _state;
-};
 
 class Stepper
 {
@@ -100,6 +30,8 @@ public:
     void setState(int state);
     int getState();
     void move();
+    void moveTo(int destination);
+    void reset();
     void zero();
     void home();
     void bag();
@@ -124,6 +56,8 @@ private:
     enum _states
     {
         NONE,
+        RESET,
+        STEP,
         ZERO,
         HOME,
         BAG,

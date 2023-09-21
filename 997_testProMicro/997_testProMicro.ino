@@ -1,4 +1,6 @@
-#include "Controls.h"
+#include "LED.h"
+#include "IR.h"
+#include "Stepper.h"
 
 const int stepPin = 3;
 const int dirPin = 4;
@@ -25,13 +27,10 @@ void setup()
 {
     Serial.begin(115200);
 
-    // pinMode(stepPin, OUTPUT);
-    // pinMode(dirPin, OUTPUT);
     pinMode(10, INPUT_PULLUP);
     pinMode(16, INPUT_PULLUP);
 
     pr1.init();
-    // stepper1.home();
 }
 void loop()
 {
@@ -43,23 +42,14 @@ void loop()
 
     if (digitalRead(16) == LOW)
     {
-        stepper1.home();
+        stepper1.drop();
         ledRed.blinker(100);
     }
 
     if (digitalRead(10) == LOW)
     {
-        stepper1.bag();
+        stepper1.home();
         ledRed.blinker(100);
-    }
-}
-
-void waitTime(long unsigned &startTime, int time, void (*callBackStart)())
-{
-    if (millis() - startTime >= time)
-    {
-        (*callBackStart)();
-        startTime = millis();
     }
 }
 
