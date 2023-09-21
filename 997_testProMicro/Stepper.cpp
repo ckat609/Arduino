@@ -64,34 +64,9 @@ void Stepper::ccw()
     _direction = LOW;
 }
 
-void Stepper::setDirection(bool direction)
+int Stepper::getPosition()
 {
-    _direction = direction;
-}
-
-bool Stepper::getDirection()
-{
-    return _direction;
-}
-
-void Stepper::setDelayTime(int delayTime)
-{
-    _delayTime = delayTime;
-}
-
-int Stepper::getDelayTime()
-{
-    return _delayTime;
-}
-
-void Stepper::setState(int state)
-{
-    _state = state;
-}
-
-int Stepper::getState()
-{
-    return _state;
+    return _position;
 }
 
 void Stepper::reset()
@@ -187,13 +162,6 @@ void Stepper::move()
             }
             Serial.println(_position);
             _state = NONE;
-
-            // if (_position == POSITION_HOME)
-            // {
-            //     Serial.println("HOME");
-            //     _state = NONE;
-            // }
-
             break;
         case ZERO:
             static int zeroStepCounter = 0;
@@ -202,9 +170,9 @@ void Stepper::move()
             if (zeroStepCounter == ZERO_PULL_BACK_STEPS)
             {
                 _state = NONE;
+                _position = 0;
                 zeroStepCounter = 0;
                 POSITION_HOME = 0;
-                _position = 0;
             };
             break;
         case HOME:

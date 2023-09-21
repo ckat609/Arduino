@@ -23,12 +23,7 @@ public:
     void stop();
     void cw();
     void ccw();
-    void setDirection(bool direction);
-    bool getDirection();
-    void setDelayTime(int delayTime);
-    int getDelayTime();
-    void setState(int state);
-    int getState();
+    int getPosition();
     void move();
     void moveTo(int destination);
     void reset();
@@ -47,7 +42,6 @@ private:
     bool _moving;
     int _state;
     int _position = 0;
-    int POSITION_ZERO = 0;
     int POSITION_HOME = 0;
     int POSITION_BAG = 200;
     int POSITION_FUNNEL = 300;

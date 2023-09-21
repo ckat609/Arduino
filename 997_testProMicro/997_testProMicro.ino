@@ -11,10 +11,6 @@ const int photoPin = 6;
 
 // void waitTime(void (*)());
 
-int gummyCounter = 0;
-int gummyCounerGlobal = 0;
-int gummyMax = 3;
-
 Led ledGreen(ledGreenPin);
 Led ledYellow(ledYellowPin);
 Led ledRed(ledRedPin);
@@ -55,7 +51,12 @@ void loop()
 
 void countCandy()
 {
+    static int gummyCounter = 0;
+    static int gummyCounerGlobal = 0;
+    static int gummyMax = 3;
+
     int checked = pr1.check();
+
     if (checked == pr1.TRIGGERED)
     {
         ledRed.timeout();
@@ -69,33 +70,16 @@ void countCandy()
         gummyCounter++;
         gummyCounerGlobal++;
 
-        Serial.print(" ----> CURRENT: ");
+        Serial.print("CURRENT: ");
         Serial.print(gummyCounter);
         Serial.print(" ----> TOTAL: ");
         Serial.println(gummyCounerGlobal);
     }
 
-    checkMaxCandy();
-}
-
-void checkMaxCandy()
-{
-    int maxSteps = 200;
-    static int currStep = 0;
-
     if (gummyCounter == gummyMax)
     {
         ledGreen.blink(ledGreen.SHORT);
-        stepper1.cw();
-
-        if (currStep < maxSteps)
-        {
-            stepper1.step();
-        }
-        else
-        {
-            currStep = 0;
-        }
+        stepper1.funnel();
         gummyCounter = 0;
     }
 }
