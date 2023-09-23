@@ -113,21 +113,28 @@ void Stepper::drop()
     _delayTime = STEP_DELAY_FAST;
 }
 
+void Stepper::encoder(int destination)
+{
+    _state = ENCODER;
+    _delayTime = STEP_DELAY_FAST;
+    _destination = destination;
+}
+
 void Stepper::moveTo(int destination)
 {
-    if (_position > destination)
+    if (_position > _destination)
     {
         _position--;
         cw();
     }
 
-    if (_position < destination)
+    if (_position < _destination)
     {
         _position++;
         ccw();
     }
 
-    if (_position == destination)
+    if (_position == _destination)
     {
         _state = NONE;
     }
@@ -186,6 +193,10 @@ void Stepper::move()
             break;
         case DROP:
             moveTo(POSITION_DROP);
+            break;
+        case ENCODER:
+            Serial.println(_position);
+            moveTo(_destination);
             break;
         default:
             break;

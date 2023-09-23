@@ -1,15 +1,17 @@
 #include "LED.h"
 #include "IR.h"
 #include "Stepper.h"
+#include "Encoder.h"
 
-const int stepPin = 3;
-const int dirPin = 4;
+const int stepperStepPin = 3;
+const int stepperDirPin = 4;
 const int ledGreenPin = 7;
 const int ledYellowPin = 8;
 const int ledRedPin = 9;
 const int photoPin = 6;
-
-// void waitTime(void (*)());
+const int encoderSWPin = 5;
+const int encoderDTPin = 14;
+const int encoderCLKPin = 15;
 
 Led ledGreen(ledGreenPin);
 Led ledYellow(ledYellowPin);
@@ -17,7 +19,9 @@ Led ledRed(ledRedPin);
 
 IR pr1(photoPin);
 
-Stepper stepper1(stepPin, dirPin);
+Stepper stepper1(stepperStepPin, stepperDirPin);
+
+Encoder encoder1(encoderSWPin, encoderDTPin, encoderCLKPin);
 
 void setup()
 {
@@ -34,7 +38,14 @@ void loop()
     ledYellow.check();
     ledRed.check();
     stepper1.move();
+    stepper1.encoder(stepper1.getPosition());
     countCandy();
+
+    if (encoder1.isPressed() == true)
+    {
+        stepper1.drop();
+        ledRed.blinker(100);
+    }
 
     if (digitalRead(16) == LOW)
     {

@@ -33,6 +33,7 @@ public:
     void funnel();
     void sucker();
     void drop();
+    void encoder(int destination);
 
 private:
     int _stepPin;
@@ -41,6 +42,7 @@ private:
     int _delayTime;
     bool _moving;
     int _state;
+    int _destination;
     int _position = 0;
     int POSITION_HOME = 0;
     int POSITION_BAG = 200;
@@ -57,7 +59,8 @@ private:
         BAG,
         FUNNEL,
         SUCKER,
-        DROP
+        DROP,
+        ENCODER
     };
 };
 
