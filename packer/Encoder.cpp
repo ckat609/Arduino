@@ -3,24 +3,16 @@
 
 Encoder::Encoder() {}
 
-Encoder::Encoder(int pinSW, int pinDT, int pinCLK)
+Encoder::Encoder(int pinDT, int pinCLK)
 {
-    _pinSW = pinSW;
     _pinDT = pinDT;
     _pinCLK = pinCLK;
 
-    pinMode(pinSW, INPUT_PULLUP);
     pinMode(pinDT, INPUT);
     pinMode(pinCLK, INPUT);
 
-    _previousSW = digitalRead(_pinSW);
     _previousDT = digitalRead(_pinDT);
     _previousCLK = digitalRead(_pinCLK);
-}
-
-bool Encoder::readSW()
-{
-    return digitalRead(_pinSW);
 }
 
 bool Encoder::readDT()
@@ -31,36 +23,6 @@ bool Encoder::readDT()
 bool Encoder::readCLK()
 {
     return digitalRead(_pinCLK);
-}
-
-void Encoder::press()
-{
-    int duration = 250;
-    _currentTime = millis();
-    _currentSW = readSW();
-
-    if (_currentSW == LOW && _previousSW == HIGH && _currentTime - _previousTime >= duration)
-    {
-        _state = PRESSED;
-        _previousTime = _currentTime;
-    }
-    _previousSW = _currentSW;
-}
-
-bool Encoder::isPressed()
-{
-    switch (_state)
-    {
-    case NONE:
-        press();
-        return false;
-        break;
-    case PRESSED:
-        _state = NONE;
-        return true;
-
-        break;
-    }
 }
 
 int Encoder::check()
