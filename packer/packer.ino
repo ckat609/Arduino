@@ -1,3 +1,4 @@
+#include "Button.h"
 #include "LED.h"
 #include "IR.h"
 #include "Stepper.h"
@@ -5,13 +6,21 @@
 
 const int stepperStepPin = 3;
 const int stepperDirPin = 4;
+
 const int ledGreenPin = 7;
 const int ledYellowPin = 8;
 const int ledRedPin = 9;
+
 const int photoPin = 6;
-const int encoderSWPin = 5;
+
 const int encoderDTPin = 14;
 const int encoderCLKPin = 15;
+
+const int buttonRedPin = 16;
+const int buttonGreenPin = 10;
+const int buttonEncoderPin = 5;
+const int buttonLimitResetPin = A0;
+const int buttonLimitZeroPin = A1;
 
 Led ledGreen(ledGreenPin);
 Led ledYellow(ledYellowPin);
@@ -21,14 +30,17 @@ IR pr1(photoPin);
 
 Stepper stepper1(stepperStepPin, stepperDirPin);
 
-Encoder encoder1(encoderSWPin, encoderDTPin, encoderCLKPin);
+Encoder encoder1(encoderDTPin, encoderCLKPin);
+
+Button buttonRed(buttonRedPin);
+Button buttonGreen(buttonGreenPin);
+Button buttonEncoder(buttonEncoderPin);
+Button buttonLimitReset(buttonLimitResetPin);
+Button buttonLimitZero(buttonLimitZeroPin);
 
 void setup()
 {
     Serial.begin(115200);
-
-    pinMode(10, INPUT_PULLUP);
-    pinMode(16, INPUT_PULLUP);
 
     pr1.init();
 }
@@ -38,25 +50,41 @@ void loop()
     ledYellow.check();
     ledRed.check();
     stepper1.move();
-    stepper1.encoder(stepper1.getPosition());
     countCandy();
 
-    if (encoder1.isPressed() == true)
+    // ledRed.blinker(150);
+    if (buttonLimitZero.onPress())
     {
-        stepper1.drop();
-        ledRed.blinker(100);
+        ledRed.clear();
+        ledGreen.blink(250);
+        stepper1.zero();
     }
 
-    if (digitalRead(16) == LOW)
+    if (buttonLimitReset.onPress())
     {
-        stepper1.drop();
-        ledRed.blinker(100);
+        ledRed.blinker(150);
+        stepper1.reset();
     }
 
-    if (digitalRead(10) == LOW)
+    if (buttonEncoder.onPress())
     {
+    }
+
+    if (buttonRed.onPress())
+    {
+        ledYellow.blink(50);
+    }
+
+    if (buttonRed.onRelease())
+    {
+        ledRed.blink(50);
+        stepper1.drop();
+    }
+
+    if (buttonGreen.onRelease())
+    {
+        ledRed.blink(50);
         stepper1.home();
-        ledRed.blinker(100);
     }
 }
 
