@@ -10,7 +10,7 @@ public:
     static const int STEP_DELAY_MEDIUM = 2500;
     static const int STEP_DELAY_FAST = 1500;
     static const int STEP_DELAY_ULTRA = 500;
-    static const int ZERO_PULL_BACK_STEPS = 5;
+    static const int ZERO_PULL_BACK_STEPS = 25;
     static const bool CW = HIGH;
     static const bool CCW = LOW;
 
@@ -24,6 +24,7 @@ public:
     void cw();
     void ccw();
     int getPosition();
+    int getState();
     void move();
     void moveTo(int destination);
     void reset();

@@ -69,6 +69,11 @@ int Stepper::getPosition()
     return _position;
 }
 
+int Stepper::getState()
+{
+    return _state;
+}
+
 void Stepper::reset()
 {
     _state = RESET;
@@ -122,6 +127,8 @@ void Stepper::encoder(int destination)
 
 void Stepper::moveTo(int destination)
 {
+    _destination = destination;
+
     if (_position > _destination)
     {
         _position--;
@@ -167,12 +174,13 @@ void Stepper::move()
                 _position++;
                 step();
             }
-            Serial.println(_position);
             _state = NONE;
             break;
         case ZERO:
             static int zeroStepCounter = 0;
+
             zeroStepCounter++;
+            step();
 
             if (zeroStepCounter == ZERO_PULL_BACK_STEPS)
             {
@@ -195,7 +203,6 @@ void Stepper::move()
             moveTo(POSITION_DROP);
             break;
         case ENCODER:
-            Serial.println(_position);
             moveTo(_destination);
             break;
         default:
