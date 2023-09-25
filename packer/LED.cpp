@@ -90,7 +90,7 @@ void Led::check()
     case (BLINK):
         if (millis() - _startTime > _duration)
         {
-            off();
+            _state = NONE;
         }
         break;
     case BLINKER:
@@ -99,11 +99,7 @@ void Led::check()
         {
             toggle();
             stBlinker = millis();
-            if (read() == LOW)
-            {
-                _state = NONE;
-            }
-        }
+                }
         break;
     case TIMEOUT:
         if (read() == LOW && millis() - _startTime > _duration)
