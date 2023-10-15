@@ -16,6 +16,7 @@ public:
 
     Stepper();
     Stepper(int stepPin, int directionPin);
+    Stepper(int stepPin, int directionPin, int enablePin, int ms1Pin, int ms2Pin, int ms3Pin);
     Stepper(int stepPin, int directionPin, bool direction);
     Stepper(int stepPin, int directionPin, int delayTime, bool direction);
     void step();
@@ -39,6 +40,10 @@ public:
 private:
     int _stepPin;
     int _directionPin;
+    int _enablePin;
+    int _ms1Pin;
+    int _ms2Pin;
+    int _ms3Pin;
     bool _direction;
     int _delayTime;
     bool _moving;

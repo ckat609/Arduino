@@ -23,7 +23,7 @@ bool Button::press()
     }
     if (_state == PRESSED && read() == LOW && millis() - _previousTime >= _duration)
     {
-        _state = WAITING;
+        _state = DOWN;
         _previousTime = millis();
         return false;
     }
@@ -32,7 +32,7 @@ bool Button::press()
 
 bool Button::release()
 {
-    if ((_state == WAITING || _state == PRESSED) && read() == HIGH && millis() - _previousTime >= _duration)
+    if ((_state == DOWN || _state == PRESSED) && read() == HIGH && millis() - _previousTime >= _duration)
     {
         _state = RELEASED;
         _previousTime = millis();
@@ -50,13 +50,12 @@ bool Button::release()
 
 bool Button::onPress()
 {
-    if (_state == NONE || _state == WAITING)
+    if (_state == NONE || _state == DOWN)
     {
         return press();
     }
-    release();
 
-    return false;
+    return release();
 }
 
 bool Button::onRelease()

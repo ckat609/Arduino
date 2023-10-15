@@ -24,8 +24,8 @@ private:
     {
         NONE,
         PRESSED,
-        RELEASED,
-        WAITING
+        DOWN,
+        RELEASED
     };
 };
 

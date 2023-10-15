@@ -24,6 +24,24 @@ Stepper::Stepper(int stepPin, int directionPin, bool direction)
     digitalWrite(_directionPin, direction);
 }
 
+Stepper::Stepper(int stepPin, int directionPin, int enablePin, int ms1Pin, int ms2Pin, int ms3Pin)
+{
+    _stepPin = stepPin;
+    _directionPin = directionPin;
+    _delayTime = STEP_DELAY_MEDIUM;
+    pinMode(_stepPin, OUTPUT);
+    pinMode(_directionPin, OUTPUT);
+    pinMode(_enablePin, OUTPUT);
+    pinMode(_ms1Pin, OUTPUT);
+    pinMode(_ms2Pin, OUTPUT);
+    pinMode(_ms3Pin, OUTPUT);
+    digitalWrite(_directionPin, CW);
+    digitalWrite(_enablePin, LOW);
+    digitalWrite(_ms1Pin, LOW);
+    digitalWrite(_ms2Pin, LOW);
+    digitalWrite(_ms3Pin, LOW);
+}
+
 Stepper::Stepper(int stepPin, int directionPin, int delayTime, bool direction)
 {
     _stepPin = stepPin;
